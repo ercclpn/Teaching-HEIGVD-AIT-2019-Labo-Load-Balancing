@@ -238,6 +238,8 @@ The JMeter test plan is set up in the following way:
 
 4. Provide a screenshot of the summary report from JMeter.
 
+![image](https://user-images.githubusercontent.com/28777250/69250349-cde8f480-0baf-11ea-9830-6bc0338d5a9a.png)
+
 5. Run the following command:
 
   ```bash
