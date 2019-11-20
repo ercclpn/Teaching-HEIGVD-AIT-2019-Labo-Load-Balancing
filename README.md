@@ -1,4 +1,4 @@
-title: Lab 03 - Load balancing
+# Lab 03 - Load balancing
 ---
 
 ## Lab 03 - Load balancing
@@ -215,9 +215,18 @@ The JMeter test plan is set up in the following way:
     URL <http://192.168.42.42> in your browser. Add screenshots to
     complement your explanations. We expect that you take a deeper a
     look at session management.
+    
+    Pour l'instant, à chaque rafraichissement, le serveur  sur lequel le loadbalancer nous envoie change. (Stratégie Round-Robin) la session n'est pas prise en compte. 
+
+    ![image](https://user-images.githubusercontent.com/28777250/69248791-31bdee00-0bad-11ea-86cb-52925a267751.png)
+
+    ![image](https://user-images.githubusercontent.com/28777250/69248842-47331800-0bad-11ea-94ed-b2d61f1f03ed.png)
+    
 
 2. Explain what should be the correct behavior of the load balancer for
     session management.
+    
+    Le comportement correct serait d'assigner une session à un serveur. À la première requête, le load balancer nous attribue un serveur selon sa stratégie, puis tant que notre session (dans cookie) reste valide, c'est systématiquement vers ce serveur que nous seront envoyés.
 
 3. Provide a sequence diagram to explain what is happening when one
     requests the URL for the first time and then refreshes the page. We
