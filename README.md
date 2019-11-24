@@ -515,6 +515,13 @@ Prepare your JMeter script with cookies erased (this will simulate new
 clients for each requests) and 10 threads this will simulate 10
 concurrent users.
 
+Réponse : 
+
+![image](https://user-images.githubusercontent.com/28777250/69497639-c8f1b100-0edf-11ea-917c-06069f532c95.png)
+
+
+Voici la config JMeter
+
 *Remark*: In general, take a screenshot of the summary report in
  JMeter to explain what is happening.
 
@@ -524,18 +531,41 @@ concurrent users.
 
 1. Be sure the delay is of 0 milliseconds is set on `s1`. Do a run to have base data to compare with the next experiments.
 
+![image](https://user-images.githubusercontent.com/28777250/69497967-eaa06780-0ee2-11ea-8f43-2d49b6e3edc0.png)
+
 2. Set a delay of 250 milliseconds on `s1`. Relaunch a run with the
     JMeter script and explain what it is happening?
+    
+    Réponse : Pendant l'exécution des tests, on voit que le counter du noeud sans délai augmente plus vite (car les requêtes sont individuellement plus rapide sur ce noeud.) Par contre, comme les cookies sont conservés (et donc la session sur le load balancer) une fois que le compteur plus rapide arrive à la moitié, il s'arrête et c'est l'autre noeuds qui monte péniblement jusqu'à sa moitié
+    
+    ![image](https://user-images.githubusercontent.com/28777250/69498005-6ef2ea80-0ee3-11ea-9569-71240a5e7f1f.png)
+
 
 3. Set a delay of 2500 milliseconds on `s1`. Same than previous step.
 
+Réponse : Ici, l'écrasante majorité des requêtes (9995) arrivent sur s2. En fait, HAProxy a detecté un timeout et ne propose donc plus le noeud 1. Nous pouvons confirmer cette hypothèse dans la page de configuration
+
+![image](https://user-images.githubusercontent.com/28777250/69498093-723aa600-0ee4-11ea-86a7-bb65e7821d98.png)
+
 4. In the two previous steps, are there any error? Why?
+
+Réponse : Non car le serveur se charge de rediriger les requêtes si l'état d'un serveur est dégradé
 
 5. Update the HAProxy configuration to add a weight to your nodes. For
     that, add `weight [1-256]` where the value of weight is between the
     two values (inclusive). Set `s1` to 2 and `s2` to 1. Redo a run with 250ms delay.
 
 6. Now, what happened when the cookies are cleared between each requests and the delay is set to 250ms ? We expect just one or two sentence to summarize your observations of the behavior with/without cookies.
+
+Réponse : 
+Quand les cookies sont gardés, le noeud sans poids va servir plus rapidement ses requêtes mais l'autre noeuds (avec un poids de 2) DOIT servir plus de client à cause de son poids et malgré le délai (s'il n'est pas considéré comme dégradé). Donc le noeuds sans délai reste à 4000 / 10'000 requêtes et l'autre monte péniblement.
+![image](https://user-images.githubusercontent.com/28777250/69498521-17f01400-0ee9-11ea-9ec6-655d90856c86.png)
+
+
+Quand les cookies sont nettoyés, le noeud sans délai s'accapare tout de même le grande majorité des requêtes malgré le poids car les sessions ne sont pas fixées
+
+![image](https://user-images.githubusercontent.com/28777250/69498287-81225800-0ee6-11ea-9b46-393a49676116.png)
+
 
 ### Task 5: Balancing strategies
 
