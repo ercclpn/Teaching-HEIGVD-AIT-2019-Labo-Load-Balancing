@@ -275,6 +275,8 @@ useful commands and hints.
     <http://192.168.42.42> in your browser. Add screenshots to
     complement your explanations. We expect that you take a deeper a
     look at session management.
+    
+    Réponse : Maintenant, lors de la requête, le load balancer nous attribue une adresse (e.g la 192.168.42.22) et nous la  q  gardons même lors du rafraîchissement multiple de la page.
 
 4. Provide a sequence diagram to explain what is happening when one
     requests the URL for the first time and then refreshes the page. We
@@ -285,6 +287,11 @@ useful commands and hints.
 
 5. Provide a screenshot of JMeter's summary report. Is there a
     difference with this run and the run of Task 1?
+    
+    Réponse : 
+    ![image](https://user-images.githubusercontent.com/28777250/69496937-e3279100-0ed7-11ea-9f1d-e2322030a155.png)
+
+    Oui, il y a une différence. Nous voyons sur la capture que seul le noeud 1 a été atteint. Nous pouvons expliquer cela car lors de la première requête de JMeter au load balancer, ce dernier lui a attribué le noeud 1, et que la session a continué grâce au cookie enregistré dans cookie manager.
 
   * Clear the results in JMeter.
 
@@ -296,6 +303,13 @@ useful commands and hints.
 
 7. Provide a screenshot of JMeter's summary report. Give a short
     explanation of what the load balancer is doing.
+    
+    Réponse : 
+    
+    ![image](https://user-images.githubusercontent.com/28777250/69497021-9a240c80-0ed8-11ea-8004-678d7a5655fe.png)
+
+    Ici, on pourrait croire que nous sommes revenus au point de départ, mais ce n'est pas le cas. 
+    En fait, comme nous avons 2 threads, chaque thread se fera fixer un noeud (pas la même car round robin) et continuera ces requêtes sur celui là. C'est donc pour cela que nous voyons de nouveau les compteurs à égalité.
 
 
 ### Task 3: Drain mode
@@ -400,26 +414,66 @@ admin stats interface (or also found in the config file).
 
 1. Take a screenshot of the Step 5 and tell us which node is answering.
 
+Réponse : 
+
+![image](https://user-images.githubusercontent.com/28777250/69497321-ea509e00-0edb-11ea-8c77-45ce59111d33.png)
+
+![image](https://user-images.githubusercontent.com/28777250/69497333-19ffa600-0edc-11ea-8ffe-1bf67a50d358.png)
+
+Le noeud `s1` répond à mes requêtes.
+
+
 2. Based on your previous answer, set the node in DRAIN mode. Take a
     screenshot of the HAProxy state page.
+    
+    Réponse :
+    
+    ![image](https://user-images.githubusercontent.com/28777250/69497359-4a474480-0edc-11ea-9326-df9f1a3d8366.png)
+
 
 3. Refresh your browser and explain what is happening. Tell us if you
     stay on the same node or not. If yes, why? If no, why?
+    
+    Réponse :
+    
+    Oui je reste sur le même noeud car ma connexion était déjà active lors du changement d'état du noeud. Donc il ne me redirige pas.
 
 4. Open another browser and open `http://192.168.42.42`. What is
     happening?
+    
+    Réponse :
+    
+    Je tombe sur le noeud `s2`
 
 5. Clear the cookies on the new browser and repeat these two steps
     multiple times. What is happening? Are you reaching the node in
     DRAIN mode?
+    
+    Réponse :
+    
+    Après avoir nettoyé les cookies et essayé d'atteindre la page plusieurs fois, je vois que je n'atteinds jamais le noeud qui est en DRAIN mode car il n'accepte aucune nouvelle connexion.
 
 6. Reset the node in READY mode. Repeat the three previous steps and
     explain what is happening. Provide a screenshot of HAProxy's stats
     page.
+    
+    Réponse : 
+    
+    ![image](https://user-images.githubusercontent.com/28777250/69497439-5c75b280-0edd-11ea-800b-c8b025312c7c.png)
+
+    Je peux faire plusieurs observations après avoir remis le noeud dans l'état `READY`
+    - Ma session sur le premier navigateur (donc sur le noeud `s1`) est conservée
+    - Le fonctionnement originel est rétabli, ainsi en nettoyant les cookies, le comportement round robin se produit.
 
 7. Finally, set the node in MAINT mode. Redo the three same steps and
     explain what is happening. Provide a screenshot of HAProxy's stats
     page.
+    
+    Réponse :
+    
+    ![image](https://user-images.githubusercontent.com/28777250/69497472-b4acb480-0edd-11ea-9c29-3b82dede4c2d.png)
+
+    En mode maintenance, la session active sur le noeud `s1` se fait rediriger sur l'autre noeud. Toutes les nouvelles connexions se font aussi rediriger sur le noeud `s2`. 
 
 ### Task 4: Round robin in degraded mode.
 
