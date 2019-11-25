@@ -420,7 +420,7 @@ Réponse :
 
 ![image](https://user-images.githubusercontent.com/28777250/69497333-19ffa600-0edc-11ea-8ffe-1bf67a50d358.png)
 
-Le noeud `s1` répond à mes requêtes.
+Le noeud `s1` répond à mes requêtes. Nous voyons biens que les 2 noeuds sont opérationnels (READY, en vert)
 
 
 2. Based on your previous answer, set the node in DRAIN mode. Take a
@@ -429,6 +429,8 @@ Le noeud `s1` répond à mes requêtes.
     Réponse :
     
     ![image](https://user-images.githubusercontent.com/28777250/69497359-4a474480-0edc-11ea-9326-df9f1a3d8366.png)
+    
+    Nous voyons bien la ligne de couleur (bleu) qui nous indique le noeud est en DRAIN mode.
 
 
 3. Refresh your browser and explain what is happening. Tell us if you
