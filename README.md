@@ -579,9 +579,49 @@ We propose that you take the time to discover the different strategies in [HAPro
 
 1. Briefly explain the strategies you have chosen and why you have chosen them.
 
+Réponse : Comme premier algorithme, j'ai choisi `leastconn`. Ainsi, le load-balancer va rediriger les requêtes vers le noeud ayant le moins de transactions actives. J'ai choisi cet algorithme car il présente une solution plutôt intuitve. De plus l'algorithme est dynamique, c'est à dire qu'il permet d'ajouter ou modifier des poids au serveur sur le tas.
+
+Comme deuxième j'ai choisi `static-rr`. Globalement, cet algorithme va agir comme round-robin. Toutefois, il est statique. Cela veut dire que pendant l'exécution des tests, si je change le poids d'un des noeuds, ce changement ne sera PAS pris en compte. Je choisis cet algorithme car l'illustration par l'exemple est clair, et ainsi nous pouvons souligner la différence entre un algo. statique et un algo. dynamique (leastconn par exemple). Cet algorithme utilise un petit peu moins de CPU que le rr classique (le CPU est une ressource précieuse pour les load-balancer) et il réagit très vite à l'insertion d'un nouveau noeud dans le pool.
+
 2. Provide evidences that you have played with the two strategies (configuration done, screenshots, ...)
 
+Réponse `leastconn`: Pour comprendre la "preuve" que je vais émettre pour le `leastconn`, prédisons d'abord le comportement. 
+En fait, à chaque requête sans cookie, nous allons alterner les sessions car on incrémente les sessions courantes (de 1) et les compteurs se ratrappent mutuellement. Ainsi, sans délai et à temps de réponse égale, les attributions seront s1/s2/s1...
+
+Maintenant, ajoutons un délai de 100 ms à s1. Si nous lançons les tests JMeter comme précédemment et que nous regardons les statistiques sur le portail web, nous voyons que malgré la différence de temps de réponse, nous sommes toujours à 5 sessions courantes (le max), et si un des 2 noeuds passe à 4, alors la nouvelle session lui sera attribuée.
+
+![image](https://user-images.githubusercontent.com/28777250/69563946-5a315800-0fb2-11ea-8181-7c751e725da3.png)
+
+![image](https://user-images.githubusercontent.com/28777250/69563965-64ebed00-0fb2-11ea-972b-36c349d8dc64.png)
+
+Réponse `static-rr`
+
+Ici, la preuve est simple à comprendre. Prenons un HAProxy configuré en RR standard (dynamique). Nous voyons qu'il est possible de modifier les poids des noeuds avec `socat` au runtime et que cela affecte les tests JMeter (100x plus de requête vers le noeud concerné) 
+
+![image](https://user-images.githubusercontent.com/28777250/69565265-eba1c980-0fb4-11ea-8c1a-d120bd07217f.png)
+
+![image](https://user-images.githubusercontent.com/28777250/69565285-f4929b00-0fb4-11ea-9891-38889b157ab2.png)
+
+Maintenant, en configurant le serveur en `static-rr` 
+
+![image](https://user-images.githubusercontent.com/28777250/69565415-358aaf80-0fb5-11ea-8a5d-1e942fffc2a8.png)
+
+Si nous essayons de changer les poids au runtime, nous obtenons une erreur (algo. statique en cours d'utilisation)
+
+![image](https://user-images.githubusercontent.com/28777250/69565446-49ceac80-0fb5-11ea-97c5-8d40af417c4d.png)
+
+Et les tests JMeter, se comportent alors normalement pour un algorithme roundrobin sans changement de poids.
+
+![image](https://user-images.githubusercontent.com/28777250/69565489-5ce17c80-0fb5-11ea-8c4e-c3df70c7d72f.png)
+
+
 3. Compare the both strategies and conclude which is the best for this lab (not necessary the best at all).
+
+Réponse : Pour récapituler, `leastconn` est un algorithme dynamique, utile lors de longues sessions (car la charge se répartit bien), de plus, c'est une solution assez intuitive lors de la répartition de charge. En revanche, `static-rr` est un algorithme statique, qui demande moins de ressource mais qui est plus réactif à l'introduction de nouveau noeud. 
+
+Au vu des éléments ci-dessus, nous pensons que `static-rr` est un meilleur choix dans le cadre du laboratoire. En effet, les performences sont un aspects importants pour nos PC - de loin pas des serveurs. Et surtout, nos sessions sont très très courtes (un GET très simple) ce qui va à l'encontre de `leastconn`
+
+Toutefois, avec si peu de charge et de requêtes, nous voulons préciser que ces deux algorithmes de load-balancing conviennent très bien.
 
 #### References
 
