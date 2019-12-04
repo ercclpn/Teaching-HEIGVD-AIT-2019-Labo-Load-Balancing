@@ -1,7 +1,7 @@
 # Lab 03 - Load balancing
----
 
-## Lab 03 - Load balancing
+Auteurs : Polier Florian, Tran Eric   
+Date : 04.12.2019
 
 
 #### Pedagogical objectives
@@ -236,6 +236,9 @@ The JMeter test plan is set up in the following way:
 
   ![Sequence diagram for part 1](assets/img/seq-diag-1.png)
 
+  Résultat : 
+  ![image](assets/img/no_sticky_session.png)
+
 4. Provide a screenshot of the summary report from JMeter.
 
 ![image](https://user-images.githubusercontent.com/28777250/69250349-cde8f480-0baf-11ea-9830-6bc0338d5a9a.png)
@@ -266,17 +269,154 @@ useful commands and hints.
 
 1. There is different way to implement the sticky session. One possibility is to use the SERVERID provided by HAProxy. Another way is to use the NODESESSID provided by the application. Briefly explain the difference between both approaches (provide a sequence diagram with cookies to show the difference).
 
+SERVERID : HAProxy génère un cookie contenant l'id du serveur (Dans notre cas, s1 ou s2) sur lequel les requêtes du client vont être envoyé pendant toute la durée de la session.
+
+![image](assets/img/SERVERID.png)
+
+NODESESSID : HAProxy va utilisé l'id de session généré par l'application et va préfixer cet id avec l'id du serveur de réponse, séparant les 2 identifiants avec le caractère **~**.
+
+![image](assets/img/NODESESSID.png)
+
+
   * Choose one of the both stickiness approach for the next tasks.
+
+  Nous avons décidé d'utiliser le NODESESSID pour les manipulations.
+
 
 2. Provide the modified `haproxy.cfg` file with a short explanation of
     the modifications you did to enable sticky session management.
+
+    ```bash
+    # Global configuration for HAProxy
+    # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#3
+    global
+        # Bind UNIX socket to get various stats
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#stats
+        stats socket /var/run/haproxy.sock mode 600 level admin
+
+        # Bind TCP port to get various stats
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#stats
+        stats socket ipv4@0.0.0.0:9999 level admin
+
+        # Define the timeout on the stats
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#3.1-stats%20timeout
+        stats timeout 30s
+
+        # Configure the way the logging is done
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#log
+        log 127.0.0.1 local1 notice
+
+    # Configure defaults for all the proxies configuration (applied for all the next sections in the configuration)
+    # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4
+    defaults
+        # Enable logging
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-log
+        log     global
+
+        # The default mode for all the services
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-bind
+        mode    http
+
+        # Enable the logging of HTTP requests
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-option%20httplog
+        option  httplog
+
+        # Enable the logging of null connections
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-option%20dontlognull
+        option  dontlognull
+
+        # Configure the timeout to connect to a server
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-timeout%20connect
+        timeout connect 5000
+
+        # Configure the timeout before cutting the connection of a client
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-timeout%20client
+        timeout client  50000
+
+        # Same kind of configuration for the servers side
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-timeout%20server
+        timeout server  50000
+
+    # Open the metrics HAProxy page on the port 1936 on any network interface on the host
+    # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4
+    listen stats *:1936
+        # Enable HAProxy to serve stats about himself and the nodes
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-stats%20enable
+        stats enable
+
+        # Define the URI to access the stats
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-stats%20uri
+        stats uri /
+
+        # Avoid leaking more info than necessary with hiding the version of HAProxy
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-stats%20hide-version
+        stats hide-version
+
+    # Define the frontend configuration. In fact, that's the part that configure how HAProxy will handle
+    # the requests from the outside world:
+    # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4
+    frontend localnodes
+        # Bind the port 80 to listen incoming outside connections (from the outside world)
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-bind
+        bind *:80
+
+        # Define which protocol is enabled on the binded ports.
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-mode
+        mode http
+
+        # Use the backend configuration references by the backend name section in this configuration
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-default_backend
+        default_backend nodes
+
+    # Define the backend configuration. In fact, that's the part that configure what is not directly
+    # accessible from the outside of the network.
+    # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4
+    backend nodes
+        # Define the protocol accepted
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-mode
+        mode http
+
+        # Define the way the backend nodes are checked to know if they are alive or down
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-option%20httpchk
+        option httpchk HEAD /
+
+        # Define the balancing policy
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#balance
+        balance roundrobin
+
+        # Automatically add the X-Forwarded-For header
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-option%20forwardfor
+        # https://en.wikipedia.org/wiki/X-Forwarded-For
+        option forwardfor
+
+        # With this config, we add the header X-Forwarded-Port
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-http-request
+        http-request set-header X-Forwarded-Port %[dst_port]
+
+        # Define the list of nodes to be in the balancing mechanism
+        # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-server
+        # ******Modified/Added lines******
+        cookie NODESESSID prefix nocache 
+        server s1 ${WEBAPP_1_IP}:3000 check cookie s1
+        server s2 ${WEBAPP_2_IP}:3000 check cookie s2
+
+    # Other links you will need later for this lab
+    #
+    # About cookies: http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-cookie
+    #
+
+    ```
+
+La ligne **cookie NODESESSID prefix nocache** indique à HAProxy de préfixer le cookie NODESESSID via le mot clé **prefix**. L'indication **nocache** informe HAProxy qu'il ne faut pas le sauvegardé dans le cache partagé pour cette information.
+
+L'instruction **check cookie s1** se trouvant sur les lignes **server** indique à HAProxy la valeur qu'il doit ajouté au cookie NODESESSID. Dans notre cas, la valeur est soit s1 ou s2. 
 
 3. Explain what is the behavior when you open and refresh the URL
     <http://192.168.42.42> in your browser. Add screenshots to
     complement your explanations. We expect that you take a deeper a
     look at session management.
     
-    Réponse : Maintenant, lors de la requête, le load balancer nous attribue une adresse (e.g la 192.168.42.22) et nous la  q  gardons même lors du rafraîchissement multiple de la page.
+    Réponse : Maintenant, lors de la requête, le load balancer nous attribue une adresse (e.g la 192.168.42.22) et nous la gardons même lors du rafraîchissement multiple de la page.
 
 4. Provide a sequence diagram to explain what is happening when one
     requests the URL for the first time and then refreshes the page. We
@@ -284,6 +424,10 @@ useful commands and hints.
     sequence of messages exchanged (1) between the browser and HAProxy
     and (2) between HAProxy and the nodes S1 and S2. We also want to see
     what is happening when a second browser is used.
+
+    ![image](assets/img/step2_details.png)
+
+    Sur le schéma ci-dessus, le détail a souligné est au niveau du préfixe lors de l'appelle de l'instruction Set-Cookie où on peut constaté que l'id du serveur ajouté à NODESESSID concerne le serveur ayant répondu à la requête.
 
 5. Provide a screenshot of JMeter's summary report. Is there a
     difference with this run and the run of Task 1?
