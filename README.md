@@ -237,7 +237,7 @@ The JMeter test plan is set up in the following way:
   Résultat : 
   ![image](assets/img/no_sticky_session.png)
 
-  Dans le schéma ci-dessus, on représente le comportement du Round-Robin.
+  Dans le schéma ci-dessus, on représente le comportement du Round-Robin. Les cookies ne sont pas pris en compte à ce moment là.
 
 4. Provide a screenshot of the summary report from JMeter.
 
