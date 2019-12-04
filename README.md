@@ -253,6 +253,9 @@ The JMeter test plan is set up in the following way:
   is happening when only one node remains active. Provide another
   sequence diagram using the same model as the previous one.
 
+![image](assets/img/no_sticky_session_s1_KO.png)
+
+Dans le cas où S1 tombe, toutes les requêtes vont être envoyé au serveur encore vivant qui est s2.
 
 ### Task 2: Sticky sessions
 
