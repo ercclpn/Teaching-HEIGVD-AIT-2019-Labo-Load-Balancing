@@ -234,10 +234,10 @@ The JMeter test plan is set up in the following way:
     sequence of messages exchanged (1) between the browser and HAProxy
     and (2) between HAProxy and the nodes S1 and S2. Here is an example:
 
-  ![Sequence diagram for part 1](assets/img/seq-diag-1.png)
-
   Résultat : 
   ![image](assets/img/no_sticky_session.png)
+
+  Dans le schéma ci-dessus, on représente le comportement du Round-Robin.
 
 4. Provide a screenshot of the summary report from JMeter.
 
@@ -255,7 +255,9 @@ The JMeter test plan is set up in the following way:
 
 ![image](assets/img/no_sticky_session_s1_KO.png)
 
-Dans le cas où S1 tombe, toutes les requêtes vont être envoyé au serveur encore vivant qui est s2.
+![image](assets/img/no_sticky_session_s1_KO_jmeter.png)
+
+Dans le cas où S1 tombe, toutes les requêtes vont être envoyé au serveur encore vivant qui est s2. L'hypothèse émis dans le diagramme est confirmé par le summary report de jmeter. On constate que seulement S2 est atteint.
 
 ### Task 2: Sticky sessions
 
@@ -272,11 +274,11 @@ useful commands and hints.
 
 1. There is different way to implement the sticky session. One possibility is to use the SERVERID provided by HAProxy. Another way is to use the NODESESSID provided by the application. Briefly explain the difference between both approaches (provide a sequence diagram with cookies to show the difference).
 
-SERVERID : HAProxy génère un cookie contenant l'id du serveur (Dans notre cas, s1 ou s2) sur lequel les requêtes du client vont être envoyé pendant toute la durée de la session.
+SERVERID : HAProxy génère un cookie contenant l'id du serveur qui est affecté au client(dans notre cas, s1 ou s2) sur lequel les requêtes vont être envoyées pendant toute la durée de la session.
 
 ![image](assets/img/SERVERID.png)
 
-NODESESSID : HAProxy va utilisé l'id de session généré par l'application et va préfixer cet id avec l'id du serveur de réponse, séparant les 2 identifiants avec le caractère **~**.
+NODESESSID : HAProxy va utiliser l'id de session généré par l'application (retourné dans la réponse) et va préfixer cet id avec l'id du serveur de réponse, séparant les 2 identifiants avec le caractère **~**. Lorsque le cookie a été définit, quand le client envoie une nouvelle requête avec le cookie attaché, HAProxy va enlevé le préfixe avant de le transférer à l'application. 
 
 ![image](assets/img/NODESESSID.png)
 
@@ -410,7 +412,7 @@ NODESESSID : HAProxy va utilisé l'id de session généré par l'application et 
 
     ```
 
-La ligne **cookie NODESESSID prefix nocache** indique à HAProxy de préfixer le cookie NODESESSID via le mot clé **prefix**. L'indication **nocache** informe HAProxy qu'il ne faut pas le sauvegardé dans le cache partagé pour cette information.
+La ligne **cookie NODESESSID prefix nocache** indique à HAProxy (via le mot-clé **prefix**) de préfixer le cookie NODESESSID. L'indication **nocache** informe HAProxy qu'il ne s'agit pas d'une information à partager.
 
 L'instruction **check cookie s1** se trouvant sur les lignes **server** indique à HAProxy la valeur qu'il doit ajouté au cookie NODESESSID. Dans notre cas, la valeur est soit s1 ou s2. 
 
@@ -420,6 +422,10 @@ L'instruction **check cookie s1** se trouvant sur les lignes **server** indique 
     look at session management.
     
     Réponse : Maintenant, lors de la requête, le load balancer nous attribue une adresse (e.g la 192.168.42.22) et nous la gardons même lors du rafraîchissement multiple de la page.
+
+    ![image](assets/img/step2_it1.png)
+
+    ![image](assets/img/step2_it2.png)
 
 4. Provide a sequence diagram to explain what is happening when one
     requests the URL for the first time and then refreshes the page. We
